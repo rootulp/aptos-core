@@ -486,7 +486,6 @@ impl<'a> AptosTestAdapter<'a> {
             TransactionStatus::Discard(_) => {
                 bail!("Transaction discarded. VMStatus: {}", status)
             }
-            TransactionStatus::Retry => panic!(),
         }
     }
 

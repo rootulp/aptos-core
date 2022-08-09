@@ -203,7 +203,6 @@ impl TestContext {
         for st in result.compute_status() {
             match st {
                 TransactionStatus::Discard(st) => panic!("transaction is discarded: {:?}", st),
-                TransactionStatus::Retry => panic!("should not retry"),
                 TransactionStatus::Keep(_) => (),
             }
         }

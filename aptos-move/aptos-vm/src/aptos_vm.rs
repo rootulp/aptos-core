@@ -190,7 +190,6 @@ impl AptosVM {
             TransactionStatus::Discard(status) => {
                 (VMStatus::Error(status), discard_error_output(status))
             }
-            TransactionStatus::Retry => unreachable!(),
         }
     }
 
@@ -1013,13 +1012,12 @@ impl VMAdapter for AptosVM {
 
                 // Increment the counter for user transactions executed.
                 let counter_label = match output.status() {
-                    TransactionStatus::Keep(_) => Some("success"),
-                    TransactionStatus::Discard(_) => Some("discarded"),
-                    TransactionStatus::Retry => None,
+                    TransactionStatus::Keep(_) => "success",
+                    TransactionStatus::Discard(_) => "discarded",
                 };
-                if let Some(label) = counter_label {
-                    USER_TRANSACTIONS_EXECUTED.with_label_values(&[label]).inc();
-                }
+                USER_TRANSACTIONS_EXECUTED
+                    .with_label_values(&[counter_label])
+                    .inc();
                 (vm_status, output, Some(sender))
             }
             PreprocessedTransaction::WriteSet(txn) => {
