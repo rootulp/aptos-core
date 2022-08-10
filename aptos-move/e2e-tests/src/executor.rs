@@ -280,7 +280,7 @@ impl FakeExecutor {
     pub fn execute_block(
         &self,
         txn_block: Vec<SignedTransaction>,
-    ) -> Result<Vec<TransactionOutput>, VMStatus> {
+    ) -> Result<Vec<Option<TransactionOutput>>, VMStatus> {
         self.execute_transaction_block(
             txn_block
                 .into_iter()
@@ -294,7 +294,7 @@ impl FakeExecutor {
     pub fn execute_block_and_keep_vm_status(
         &self,
         txn_block: Vec<SignedTransaction>,
-    ) -> Result<Vec<(VMStatus, TransactionOutput)>, VMStatus> {
+    ) -> Result<Vec<(VMStatus, Option<TransactionOutput>)>, VMStatus> {
         AptosVM::execute_block_and_keep_vm_status(
             txn_block
                 .into_iter()
@@ -309,7 +309,7 @@ impl FakeExecutor {
     pub fn execute_and_apply(&mut self, transaction: SignedTransaction) -> TransactionOutput {
         let mut outputs = self.execute_block(vec![transaction]).unwrap();
         assert!(outputs.len() == 1, "transaction outputs size mismatch");
-        let output = outputs.pop().unwrap();
+        let output = outputs.pop().unwrap().expect("transaction status is retry");
         match output.status() {
             TransactionStatus::Keep(status) => {
                 self.apply_write_set(output.write_set());
@@ -328,7 +328,7 @@ impl FakeExecutor {
     pub fn execute_transaction_block_parallel(
         &self,
         txn_block: Vec<Transaction>,
-    ) -> Result<Vec<TransactionOutput>, VMStatus> {
+    ) -> Result<Vec<Option<TransactionOutput>>, VMStatus> {
         let (result, _) =
             ParallelAptosVM::execute_block(txn_block, &self.data_store, num_cpus::get())?;
 
@@ -338,7 +338,7 @@ impl FakeExecutor {
     pub fn execute_transaction_block(
         &self,
         txn_block: Vec<Transaction>,
-    ) -> Result<Vec<TransactionOutput>, VMStatus> {
+    ) -> Result<Vec<Option<TransactionOutput>>, VMStatus> {
         let mut trace_map = TraceSeqMapping::default();
 
         // dump serialized transaction details before execution, if tracing
@@ -387,7 +387,7 @@ impl FakeExecutor {
         output
     }
 
-    pub fn execute_transaction(&self, txn: SignedTransaction) -> TransactionOutput {
+    pub fn execute_transaction(&self, txn: SignedTransaction) -> Option<TransactionOutput> {
         let txn_block = vec![txn];
         let mut outputs = self
             .execute_block(txn_block)
@@ -457,7 +457,8 @@ impl FakeExecutor {
             .execute_transaction_block(vec![Transaction::BlockMetadata(new_block)])
             .expect("Executing block prologue should succeed")
             .pop()
-            .expect("Failed to get the execution result for Block Prologue");
+            .expect("Failed to get the execution result for Block Prologue")
+            .expect("Executing block prologue should not be retried");
         // check if we emit the expected event, there might be more events for transaction fees
         let event = output.events()[0].clone();
         assert_eq!(event.key(), &new_block_event_key());
