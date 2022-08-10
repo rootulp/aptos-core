@@ -58,7 +58,7 @@ pub trait ExecutorTask: Sync {
 }
 
 /// Trait for execution result of a transaction.
-pub trait TransactionOutput: Send + Sync {
+pub trait TransactionOutput: Sized + Send + Sync {
     /// Type of transaction and its associated key and value.
     type T: Transaction;
 
@@ -71,5 +71,5 @@ pub trait TransactionOutput: Send + Sync {
     )>;
 
     /// Execution output for transactions that comes after SkipRest signal.
-    fn skip_output() -> Self;
+    fn skip_output() -> Option<Self>;
 }

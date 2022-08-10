@@ -48,13 +48,8 @@ impl PTransactionOutput for AptosTransactionOutput {
     }
 
     /// Execution output for transactions that comes after SkipRest signal.
-    fn skip_output() -> Self {
-        Self(TransactionOutput::new(
-            WriteSet::default(),
-            vec![],
-            0,
-            TransactionStatus::Retry,
-        ))
+    fn skip_output() -> Option<Self> {
+        None
     }
 }
 
@@ -65,7 +60,7 @@ impl ParallelAptosVM {
         transactions: Vec<Transaction>,
         state_view: &S,
         concurrency_level: usize,
-    ) -> Result<(Vec<TransactionOutput>, Option<Error<VMStatus>>), VMStatus> {
+    ) -> Result<(Vec<Option<TransactionOutput>>, Option<Error<VMStatus>>), VMStatus> {
         // Verify the signatures of all the transactions in parallel.
         // This is time consuming so don't wait and do the checking
         // sequentially while executing the transactions.
@@ -82,7 +77,7 @@ impl ParallelAptosVM {
             Ok(results) => Ok((
                 results
                     .into_iter()
-                    .map(AptosTransactionOutput::into)
+                    .map(|o| o.map(AptosTransactionOutput::into))
                     .collect(),
                 None,
             )),

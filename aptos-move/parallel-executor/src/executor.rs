@@ -288,7 +288,7 @@ where
         &self,
         executor_initial_arguments: E::Argument,
         signature_verified_block: Vec<T>,
-    ) -> Result<Vec<E::Output>, E::Error> {
+    ) -> Result<Vec<Option<E::Output>>, E::Error> {
         if signature_verified_block.is_empty() {
             return Ok(vec![]);
         }
@@ -318,9 +318,9 @@ where
         let num_txns = scheduler.num_txn_to_execute();
         for idx in 0..num_txns {
             match last_input_output.take_output(idx) {
-                ExecutionStatus::Success(t) => final_results.push(t),
+                ExecutionStatus::Success(t) => final_results.push(Some(t)),
                 ExecutionStatus::SkipRest(t) => {
-                    final_results.push(t);
+                    final_results.push(Some(t));
                     break;
                 }
                 ExecutionStatus::Abort(err) => {

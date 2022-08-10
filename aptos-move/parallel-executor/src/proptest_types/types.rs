@@ -209,8 +209,8 @@ where
         self.0.clone()
     }
 
-    fn skip_output() -> Self {
-        Self(vec![], vec![])
+    fn skip_output() -> Option<Self> {
+        Some(Self(vec![], vec![]))
     }
 }
 
@@ -275,7 +275,21 @@ impl<V: Clone + Eq> ExpectedOutput<V> {
         Self::Success(result_vec)
     }
 
-    pub fn check_output<K>(&self, results: &Result<Vec<Output<K, V>>, usize>) -> bool {
+    pub fn check_output<K>(&self, results: &Result<Vec<Option<Output<K, V>>>, usize>) -> bool {
+        let equal = |expected_result: &Vec<Option<V>>, output: &Option<Output<K, V>>| -> bool {
+            match output {
+                Some(Output(_, result)) => expected_result == result,
+                _ => false,
+            }
+        };
+
+        let empty = |output: &Option<Output<K, V>>| -> bool {
+            match output {
+                Some(Output(_, result)) => result.is_empty(),
+                _ => false,
+            }
+        };
+
         match (self, results) {
             (Self::Aborted(i), Err(Error::UserError(idx))) => i == idx,
             (Self::SkipRest(skip_at, expected_results), Ok(results)) => {
@@ -283,16 +297,13 @@ impl<V: Clone + Eq> ExpectedOutput<V> {
                     .iter()
                     .take(*skip_at)
                     .zip(expected_results.iter())
-                    .all(|(Output(_, result), expected_results)| expected_results == result)
-                    && results
-                        .iter()
-                        .skip(*skip_at)
-                        .all(|Output(_, result)| result.is_empty())
+                    .all(|(output, expected_result)| equal(expected_result, output))
+                    && results.iter().skip(*skip_at).all(|output| empty(output))
             }
             (Self::Success(expected_results), Ok(results)) => expected_results
                 .iter()
                 .zip(results.iter())
-                .all(|(expected_result, Output(_, result))| expected_result == result),
+                .all(|(expected_result, output)| equal(expected_result, output)),
             _ => false,
         }
     }
