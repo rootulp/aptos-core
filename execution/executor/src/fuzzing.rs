@@ -57,7 +57,7 @@ impl VMExecutor for FakeVM {
     fn execute_block(
         _transactions: Vec<Transaction>,
         _state_view: &impl StateView,
-    ) -> Result<Vec<TransactionOutput>, VMStatus> {
+    ) -> Result<Vec<Option<TransactionOutput>>, VMStatus> {
         Ok(Vec::new())
     }
 }

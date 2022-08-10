@@ -66,7 +66,7 @@ impl ApplyChunkOutput {
 
     fn sort_transactions(
         mut transactions: Vec<Transaction>,
-        transaction_outputs: Vec<TransactionOutput>,
+        transaction_outputs: Vec<Option<TransactionOutput>>,
     ) -> Result<(
         bool,
         Vec<TransactionStatus>,
@@ -75,12 +75,14 @@ impl ApplyChunkOutput {
         Vec<Transaction>,
     )> {
         let num_txns = transactions.len();
-        let mut transaction_outputs: Vec<ParsedTransactionOutput> =
-            transaction_outputs.into_iter().map(Into::into).collect();
+        let mut transaction_outputs: Vec<Option<ParsedTransactionOutput>> = transaction_outputs
+            .into_iter()
+            .map(|o| o.map(Into::into))
+            .collect();
         // N.B. off-by-1 intentionally, for exclusive index
         let new_epoch_marker = transaction_outputs
             .iter()
-            .position(|o| o.is_reconfig())
+            .position(|o| o.is_some() && o.unwrap().is_reconfig())
             .map(|idx| idx + 1);
 
         // Transactions after the epoch ending are all to be retried.
@@ -94,36 +96,28 @@ impl ApplyChunkOutput {
         // N.B. Transaction status after the epoch marker are ignored and set to Retry forcibly.
         let status = transaction_outputs
             .iter()
-            .map(|t| t.status())
-            .cloned()
-            .chain(repeat(TransactionStatus::Retry))
+            .map(|&t| match t {
+                Some(o) => Some(o.status()),
+                None => None,
+            })
+            .chain(repeat(None))
             .take(num_txns)
             .collect();
 
         // Separate transactions with the Keep status out.
         let (to_keep, to_discard) =
             itertools::zip_eq(transactions.into_iter(), transaction_outputs.into_iter())
-                .partition::<Vec<(Transaction, ParsedTransactionOutput)>, _>(|(_, o)| {
-                    matches!(o.status(), TransactionStatus::Keep(_))
+                .partition::<Vec<(Transaction, Option<ParsedTransactionOutput>)>, _>(|(_, o)| {
+                    o.is_some() && matches!(o.unwrap().status(), TransactionStatus::Keep(_))
                 });
 
         // Sanity check transactions with the Discard status:
         let to_discard = to_discard
             .into_iter()
             .map(|(t, o)| {
-                // In case a new status other than Retry, Keep and Discard is added:
-                if !matches!(o.status(), TransactionStatus::Discard(_)) {
-                    error!("Status other than Retry, Keep or Discard; Transaction discarded.");
-                }
-                // VM shouldn't have output anything for discarded transactions, log if it did.
-                if !o.write_set().is_empty() || !o.events().is_empty() {
-                    error!(
-                        "Discarded transaction has non-empty write set or events. \
-                     Transaction: {:?}. Status: {:?}.",
-                        t,
-                        o.status(),
-                    );
-                    APTOS_EXECUTOR_ERRORS.inc();
+                // In case a new status other than Keep and Discard is added:
+                if o.is_some() && !matches!(o.unwrap().status(), TransactionStatus::Discard(_)) {
+                    error!("Status other than Keep or Discard; Transaction discarded.");
                 }
                 Ok(t)
             })

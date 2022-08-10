@@ -21,7 +21,7 @@ pub struct ChunkOutput {
     /// Input transactions.
     pub transactions: Vec<Transaction>,
     /// Raw VM output.
-    pub transaction_outputs: Vec<TransactionOutput>,
+    pub transaction_outputs: Vec<Option<TransactionOutput>>,
     /// Carries the frozen base state view, so all in-mem nodes involved won't drop before the
     /// execution result is processed; as well as al the accounts touched during execution, together
     /// with their proofs.
@@ -43,7 +43,7 @@ impl ChunkOutput {
     }
 
     pub fn by_transaction_output(
-        transactions_and_outputs: Vec<(Transaction, TransactionOutput)>,
+        transactions_and_outputs: Vec<(Transaction, Option<TransactionOutput>)>,
         state_view: CachedStateView,
     ) -> Result<Self> {
         let (transactions, transaction_outputs): (Vec<_>, Vec<_>) =
@@ -52,6 +52,7 @@ impl ChunkOutput {
         // collect all accounts touched and dedup
         let state_updates = transaction_outputs
             .iter()
+            .filter_map(|x| x.as_ref())
             .flat_map(|o| o.write_set())
             .collect::<HashSet<_>>();
 
@@ -83,8 +84,7 @@ impl ChunkOutput {
         let status: Vec<_> = self
             .transaction_outputs
             .iter()
-            .map(TransactionOutput::status)
-            .cloned()
+            .map(|o| o.map(|t| t.status()))
             .collect();
 
         if !status.is_empty() {

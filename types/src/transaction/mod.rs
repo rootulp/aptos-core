@@ -1268,14 +1268,14 @@ impl TransactionListWithProof {
 /// resulting state matches the expected state in the proof (for each version).
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct TransactionOutputListWithProof {
-    pub transactions_and_outputs: Vec<(Transaction, TransactionOutput)>,
+    pub transactions_and_outputs: Vec<(Transaction, Option<TransactionOutput>)>,
     pub first_transaction_output_version: Option<Version>,
     pub proof: TransactionInfoListWithProof,
 }
 
 impl TransactionOutputListWithProof {
     pub fn new(
-        transactions_and_outputs: Vec<(Transaction, TransactionOutput)>,
+        transactions_and_outputs: Vec<(Transaction, Option<TransactionOutput>)>,
         first_transaction_output_version: Option<Version>,
         proof: TransactionInfoListWithProof,
     ) -> Self {
@@ -1330,47 +1330,49 @@ impl TransactionOutputListWithProof {
             &self.transactions_and_outputs,
             &self.proof.transaction_infos,
         )
-        .map(|((txn, txn_output), txn_info)| {
-            // Check the events against the expected events root hash
-            verify_events_against_root_hash(&txn_output.events, txn_info)?;
+        .map(|((txn, output), txn_info)| {
+            if let Some(txn_output) = output {
+                // Check the events against the expected events root hash
+                verify_events_against_root_hash(&txn_output.events, txn_info)?;
 
-            // Verify the write set matches for both the transaction info and output
-            let write_set_hash = CryptoHash::hash(&txn_output.write_set);
-            ensure!(
-                txn_info.state_change_hash == write_set_hash,
-                "The write set in transaction output does not match the transaction info \
-                     in proof. Hash of write set in transaction output: {}. Write set hash in txn_info: {}.",
-                write_set_hash,
-                txn_info.state_change_hash,
-            );
+                // Verify the write set matches for both the transaction info and output
+                let write_set_hash = CryptoHash::hash(&txn_output.write_set);
+                ensure!(
+                    txn_info.state_change_hash == write_set_hash,
+                    "The write set in transaction output does not match the transaction info \
+                        in proof. Hash of write set in transaction output: {}. Write set hash in txn_info: {}.",
+                    write_set_hash,
+                    txn_info.state_change_hash,
+                );
 
-            // Verify the gas matches for both the transaction info and output
-            ensure!(
-                txn_output.gas_used() == txn_info.gas_used(),
-                "The gas used in transaction output does not match the transaction info \
-                     in proof. Gas used in transaction output: {}. Gas used in txn_info: {}.",
-                txn_output.gas_used(),
-                txn_info.gas_used(),
-            );
+                // Verify the gas matches for both the transaction info and output
+                ensure!(
+                    txn_output.gas_used() == txn_info.gas_used(),
+                    "The gas used in transaction output does not match the transaction info \
+                        in proof. Gas used in transaction output: {}. Gas used in txn_info: {}.",
+                    txn_output.gas_used(),
+                    txn_info.gas_used(),
+                );
 
-            // Verify the execution status matches for both the transaction info and output.
-            ensure!(
-                *txn_output.status() == TransactionStatus::Keep(txn_info.status().clone()),
-                "The execution status of transaction output does not match the transaction \
-                     info in proof. Status in transaction output: {:?}. Status in txn_info: {:?}.",
-                txn_output.status(),
-                txn_info.status(),
-            );
+                // Verify the execution status matches for both the transaction info and output.
+                ensure!(
+                    *txn_output.status() == TransactionStatus::Keep(txn_info.status().clone()),
+                    "The execution status of transaction output does not match the transaction \
+                        info in proof. Status in transaction output: {:?}. Status in txn_info: {:?}.",
+                    txn_output.status(),
+                    txn_info.status(),
+                );
 
-            // Verify the transaction hashes match those of the transaction infos
-            let txn_hash = txn.hash();
-            ensure!(
-                txn_hash == txn_info.transaction_hash(),
-                "The transaction hash does not match the hash in transaction info. \
-                     Transaction hash: {:x}. Transaction hash in txn_info: {:x}.",
-                txn_hash,
-                txn_info.transaction_hash(),
-            );
+                // Verify the transaction hashes match those of the transaction infos
+                let txn_hash = txn.hash();
+                ensure!(
+                    txn_hash == txn_info.transaction_hash(),
+                    "The transaction hash does not match the hash in transaction info. \
+                        Transaction hash: {:x}. Transaction hash in txn_info: {:x}.",
+                    txn_hash,
+                    txn_info.transaction_hash(),
+                );
+            }
             Ok(())
         })
         .collect::<Result<Vec<_>>>()?;

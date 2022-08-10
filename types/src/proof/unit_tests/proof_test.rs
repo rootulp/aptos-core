@@ -564,7 +564,7 @@ fn create_txn_output_list_with_proof(
         create_single_transaction_info_proof(transaction_hash, event_root_hash, state_change_hash);
     let root_hash = transaction_info_list_proof.transaction_infos[0].hash();
     let transaction_output_list_proof = TransactionOutputListWithProof::new(
-        vec![(transaction.clone(), transaction_output.clone())],
+        vec![(transaction.clone(), Some(transaction_output.clone()))],
         Some(1),
         transaction_info_list_proof,
     );

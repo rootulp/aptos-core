@@ -68,7 +68,7 @@ impl AptosDebugger {
         &self,
         version: Version,
         txns: Vec<Transaction>,
-    ) -> Result<Vec<TransactionOutput>> {
+    ) -> Result<Vec<Option<TransactionOutput>>> {
         let state_view = DebuggerStateView::new(&*self.debugger, version.checked_sub(1));
         AptosVM::execute_block(txns, &state_view)
             .map_err(|err| format_err!("Unexpected VM Error: {:?}", err))
@@ -79,7 +79,7 @@ impl AptosDebugger {
         mut begin: Version,
         mut limit: u64,
         save_write_sets: bool,
-    ) -> Result<Vec<TransactionOutput>> {
+    ) -> Result<Vec<Option<TransactionOutput>>> {
         let mut txns = self.debugger.get_committed_transactions(begin, limit)?;
         let mut ret = vec![];
         while limit != 0 {
@@ -102,14 +102,16 @@ impl AptosDebugger {
         begin: Version,
         txns: Vec<Transaction>,
         save_write_sets: bool,
-    ) -> Result<Vec<TransactionOutput>> {
+    ) -> Result<Vec<Option<TransactionOutput>>> {
         let results = self.execute_transactions_at_version(begin, txns)?;
         let mut ret = vec![];
         let mut is_reconfig = false;
 
         if save_write_sets {
             for result in &results {
-                self.save_write_sets(result)?
+                if let Some(txn_output) = result {
+                    self.save_write_sets(txn_output)?
+                }
             }
         }
 
@@ -117,8 +119,10 @@ impl AptosDebugger {
             if is_reconfig {
                 continue;
             }
-            if is_reconfiguration(&result) {
-                is_reconfig = true;
+            if let Some(txn_output) = &result {
+                if is_reconfiguration(&txn_output) {
+                    is_reconfig = true;
+                }
             }
             ret.push(result)
         }
