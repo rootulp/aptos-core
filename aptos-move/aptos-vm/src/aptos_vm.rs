@@ -839,7 +839,7 @@ impl AptosVM {
     pub fn execute_block_and_keep_vm_status(
         transactions: Vec<Transaction>,
         state_view: &impl StateView,
-    ) -> Result<Vec<(VMStatus, TransactionOutput)>, VMStatus> {
+    ) -> Result<Vec<(VMStatus, Option<TransactionOutput>)>, VMStatus> {
         let mut state_view_cache = StateViewCache::new(state_view);
         let count = transactions.len();
         let vm = AptosVM::new(&state_view_cache);
@@ -897,7 +897,7 @@ impl VMExecutor for AptosVM {
     fn execute_block(
         transactions: Vec<Transaction>,
         state_view: &impl StateView,
-    ) -> Result<Vec<TransactionOutput>, VMStatus> {
+    ) -> Result<Vec<Option<TransactionOutput>>, VMStatus> {
         fail_point!("move_adapter::execute_block", |_| {
             Err(VMStatus::Error(
                 StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,

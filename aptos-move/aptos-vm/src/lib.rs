@@ -158,7 +158,7 @@ pub trait VMExecutor: Send + Sync {
     fn execute_block(
         transactions: Vec<Transaction>,
         state_view: &impl StateView,
-    ) -> Result<Vec<TransactionOutput>, VMStatus>;
+    ) -> Result<Vec<Option<TransactionOutput>>, VMStatus>;
 }
 
 /// Get the AccessPath to a resource stored under `address` with type name `tag`

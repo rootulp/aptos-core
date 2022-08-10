@@ -163,7 +163,7 @@ pub(crate) fn execute_block_impl<A: VMAdapter, S: StateView>(
     adapter: &A,
     transactions: Vec<Transaction>,
     data_cache: &mut StateViewCache<S>,
-) -> Result<Vec<(VMStatus, TransactionOutput)>, VMStatus> {
+) -> Result<Vec<(VMStatus, Option<TransactionOutput>)>, VMStatus> {
     let mut result = vec![];
     let mut should_restart = false;
 
@@ -193,9 +193,7 @@ pub(crate) fn execute_block_impl<A: VMAdapter, S: StateView>(
     for (idx, txn) in signature_verified_block.into_iter().enumerate() {
         let log_context = AdapterLogSchema::new(data_cache.id(), idx);
         if should_restart {
-            let txn_output =
-                TransactionOutput::new(WriteSet::default(), vec![], 0, TransactionStatus::Retry);
-            result.push((VMStatus::Error(StatusCode::UNKNOWN_STATUS), txn_output));
+            result.push((VMStatus::Error(StatusCode::UNKNOWN_STATUS), None));
             debug!(log_context, "Retry after reconfiguration");
             continue;
         };
@@ -231,7 +229,7 @@ pub(crate) fn execute_block_impl<A: VMAdapter, S: StateView>(
         // `result` is initially empty, a single element is pushed per loop iteration and
         // the number of iterations is bound to the max size of `signature_verified_block`
         assume!(result.len() < usize::max_value());
-        result.push((vm_status, output))
+        result.push((vm_status, Some(output)))
     }
     Ok(result)
 }
