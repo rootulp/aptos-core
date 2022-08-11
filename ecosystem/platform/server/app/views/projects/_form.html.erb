@@ -1,0 +1,161 @@
+<%= form_with(model: project, data: { turbo: !@show_recaptcha_v2, controller: 'recaptcha', action: 'recaptcha#validate' }, builder: AptosFormBuilder) do |form| %>
+  <% if project.errors.any? %>
+    <div id="error_explanation" class="flex p-4 mb-4 bg-red-100 rounded-lg lg:w-96" role="alert">
+      <div class="ml-3 text-sm font-medium text-red-700">
+        <h2><%= pluralize(project.errors.count, 'error') %> prohibited this project from being saved:</h2>
+
+        <ul>
+          <% project.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="mb-16">
+    <h3 class="text-teal-400 font-mono uppercase text-2xl mb-2">Project Details</h3>
+    <div class="mb-8"><%= render DividerComponent.new %></div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :title, class: 'font-mono uppercase block mb-2' %>
+      <%= form.text_field :title, placeholder: 'Enter project name' %>
+    </div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :website_url, 'Website', class: 'font-mono uppercase block mb-2' %>
+      <%= form.url_field :website_url, placeholder: 'Enter project website URL' %>
+    </div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :short_description, class: 'font-mono uppercase block mb-2' %>
+      <%= form.text_field :short_description, placeholder: 'Enter tagline / short description' %>
+    </div>
+
+    <div class="mb-6">
+      <%= form.label :full_description, class: 'font-mono uppercase block mb-2' %>
+      <%= form.text_area :full_description, placeholder: 'Enter full project description', rows: 8 %>
+    </div>
+
+    <div class="mb-6">
+      <%= form.label :categories, class: 'font-mono uppercase block mb-2' %>
+      WIP
+    </div>
+  </div>
+
+  <div class="mb-16">
+    <h3 class="text-teal-400 font-mono uppercase text-2xl mb-2">Social Links</h3>
+    <div class="mb-8"><%= render DividerComponent.new %></div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :github_url, 'GitHub', class: 'font-mono uppercase block mb-2' %>
+      <%= form.url_field :github_url, placeholder: 'Enter project GitHub URL' %>
+    </div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :discord_url, 'Discord', class: 'font-mono uppercase block mb-2' %>
+      <%= form.url_field :discord_url, placeholder: 'Enter project Discord URL' %>
+    </div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :twitter_url, 'Twitter', class: 'font-mono uppercase block mb-2' %>
+      <%= form.url_field :twitter_url, placeholder: 'Enter project Twitter URL' %>
+    </div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :telegram_url, 'Telegram', class: 'font-mono uppercase block mb-2' %>
+      <%= form.url_field :telegram_url, placeholder: 'Enter project Telegram URL' %>
+    </div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :linkedin_url, 'LinkedIn', class: 'font-mono uppercase block mb-2' %>
+      <%= form.url_field :linkedin_url, placeholder: 'Enter project LinkedIn URL' %>
+    </div>
+  </div>
+
+  <div class="mb-16">
+    <h3 class="text-teal-400 font-mono uppercase text-2xl mb-2">Media</h3>
+    <div class="mb-8"><%= render DividerComponent.new %></div>
+
+    <div class="mb-6">
+      <%= form.label :thumbnail_url, 'Thumbnail', class: 'font-mono uppercase block mb-2' %>
+      <%= form.file_field :thumbnail_url, class: 'hidden' %>
+      <%= content_tag :button, class: 'w-48 h-48 bg-neutral-800 border-neutral-700 border-2 border-dashed rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-400 focus:text-neutral-400 cursor-pointer' do %>
+        <%= render IconComponent.new(:upload, size: :large) %>
+      <% end %>
+    </div>
+
+    <div class="mb-6">
+      <%= form.label :screenshots, 'Screenshot Gallery', class: 'font-mono uppercase block mb-2' %>
+      <%= content_tag :button, class: 'w-full h-96 bg-neutral-800 border-neutral-700 border-2 border-dashed rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-400 focus:text-neutral-400 cursor-pointer' do %>
+        <div class="w-96 flex flex-col gap-4 items-center">
+          <%= render IconComponent.new(:upload, size: :large) %>
+          <p class="font-light text-neutral-400">Upload at least one image, 1920 x 1080px / aspect ratio of 16:9, max. 5MB each.</p>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :youtube_url, 'Video', class: 'font-mono uppercase block mb-2' %>
+      <%= form.url_field :youtube_url, placeholder: 'YouTube video URL' %>
+    </div>
+  </div>
+
+  <div class="mb-16">
+    <h3 class="text-teal-400 font-mono uppercase text-2xl mb-2">Milestones</h3>
+    <div class="mb-8"><%= render DividerComponent.new %></div>
+
+    <div class="flex gap-8 mb-6">
+      <div class="flex-1 max-w-prose">
+        <%= form.label :title, 'Milestone Title', class: 'font-mono uppercase block mb-2' %>
+        <%= form.text_field :title, placeholder: 'Enter milestone name' %>
+      </div>
+
+      <div>
+        <%= form.label :start_date, 'Start Date', class: 'font-mono uppercase block mb-2' %>
+        <%= form.date_field :start_date %>
+      </div>
+
+      <div>
+        <%= form.label :end_date, 'End Date', class: 'font-mono uppercase block mb-2' %>
+        <%= form.date_field :end_date %>
+      </div>
+    </div>
+
+    <%= render ButtonComponent.new(scheme: :secondary) do %>
+      Add Milestone ＋
+    <% end %>
+  </div>
+
+  <div class="mb-16">
+    <h3 class="text-teal-400 font-mono uppercase text-2xl mb-2">Project Members</h3>
+    <div class="mb-8"><%= render DividerComponent.new %></div>
+
+    <div class="mb-6 max-w-prose">
+      <%= form.label :username, 'Add Users', class: 'font-mono uppercase block mb-2' %>
+      <%= form.text_field :username, placeholder: 'Enter username or email address' %>
+    </div>
+  </div>
+
+  <div class="mb-16">
+    <h3 class="text-teal-400 font-mono uppercase text-2xl mb-2">Publishing</h3>
+    <div class="mb-8"><%= render DividerComponent.new %></div>
+
+    <div class="mb-6">
+      <%= form.label :public, 'Visibility', class: 'font-mono uppercase block mb-2' %>
+      <%= form.radio_button :public, 'public', checked: true %>
+      <%= form.label :public, 'Public', value: 'public', class: 'mr-4' %>
+      <%= form.radio_button :public, 'private' %>
+      <%= form.label :public, 'Private', value: 'private' %>
+    </div>
+
+    <label class="flex gap-2 items-center cursor-pointer">
+      <%= form.check_box :publish_forum %>
+      <span>Create post on Aptos Forum</span>
+    </label>
+  </div>
+
+  <div class="flex">
+    <%= form.submit 'Submit Project', size: :large, class: 'mx-auto' %>
+  </div>
+<% end %>
