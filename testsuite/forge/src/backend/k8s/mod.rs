@@ -12,10 +12,12 @@ pub mod chaos;
 mod cluster_helper;
 pub mod node;
 pub mod prometheus;
+mod stateful_set;
 mod swarm;
 
 pub use cluster_helper::*;
 pub use node::K8sNode;
+pub use stateful_set::*;
 pub use swarm::*;
 
 use aptos_sdk::crypto::ed25519::ED25519_PRIVATE_KEY_LENGTH;
