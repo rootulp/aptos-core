@@ -157,6 +157,30 @@ resource "helm_release" "chaos-mesh" {
   }
 }
 
+# when upgrading the AWS ALB ingress controller, update the CRDs as well using:
+# kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller/crds?ref=master"
+resource "helm_release" "aws-load-balancer-controller" {
+  name        = "aws-load-balancer-controller"
+  repository  = "https://aws.github.io/eks-charts"
+  chart       = "aws-load-balancer-controller"
+  namespace   = "kube-system"
+  max_history = 5
+  wait        = false
+
+  values = [
+    jsonencode({
+      serviceAccount = {
+        create = false
+        // the name of the kube-system service account used for AWS integrations
+        name = "k8s-aws-integrations"
+      }
+      clusterName = module.validator.aws_eks_cluster.name
+      region      = var.region
+      vpcId       = module.validator.vpc_id
+    })
+  ]
+}
+
 resource "helm_release" "testnet-addons" {
   name        = "testnet-addons"
   chart       = local.testnet_addons_helm_chart_path
@@ -165,12 +189,10 @@ resource "helm_release" "testnet-addons" {
 
   values = [
     jsonencode({
+      # for external-dns
       aws = {
-        region       = var.region
-        cluster_name = module.validator.aws_eks_cluster.name
-        vpc_id       = module.validator.vpc_id
-        role_arn     = aws_iam_role.k8s-aws-integrations.arn
-        zone_name    = var.zone_id != "" ? data.aws_route53_zone.aptos[0].name : null
+        role_arn  = aws_iam_role.k8s-aws-integrations.arn
+        zone_name = var.zone_id != "" ? data.aws_route53_zone.aptos[0].name : null
       }
       genesis = {
         era             = var.era
