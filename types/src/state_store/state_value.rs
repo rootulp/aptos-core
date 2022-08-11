@@ -61,6 +61,10 @@ impl StateValue {
     pub fn empty() -> Self {
         StateValue::new(None)
     }
+
+    pub fn size(&self) -> usize {
+        self.maybe_bytes.as_ref().map_or(0, |bytes| bytes.len())
+    }
 }
 
 impl From<Vec<u8>> for StateValue {
